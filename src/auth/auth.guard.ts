@@ -1,4 +1,4 @@
-import { ClerkClient } from '@clerk/backend';
+import { authenticateRequest, clerkClient, ClerkClient } from '@clerk/express';
 import { Reflector } from '@nestjs/core';
 import {
   CanActivate,
@@ -11,7 +11,6 @@ import {
 
 import { CLERK_CLIENT } from 'src/integrations/clerk/clerk.provider';
 import { IS_PUBLIC_KEY } from 'src/auth/decorators/public.decorator';
-import { reqTransformer } from '../util/utils';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -36,22 +35,11 @@ export class AuthGuard implements CanActivate {
 
       const request = context.switchToHttp().getRequest();
 
-      const prefix =
-        this.configService.get('environment') === 'production'
-          ? 'https://'
-          : 'http://';
-
-      request.url = new URL(
-        `${prefix}${process.env.HOST || request.hostname || 'localhost'}${request.url}`,
-      );
-
-      const modifiedRequest = await reqTransformer(request);
-
-      const auth = await this.clerkClient.authenticateRequest(modifiedRequest);
+      const auth = await authenticateRequest({ clerkClient, request });
 
       request.auth = auth.toAuth();
 
-      return true;
+      return !!request.auth.userId;
     } catch (error) {
       console.error('ERROR', error);
       return true;
