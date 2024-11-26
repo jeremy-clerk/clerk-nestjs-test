@@ -6,13 +6,13 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  getRoot(@Request() req): string {
-    return this.appService.getRoot(req.auth);
+  async getRoot(@Request() req) {
+    return await this.appService.getUser(req.auth);
   }
 
   @Post()
   postRoot(@Request() req) {
-    return { auth: req.auth };
+    return this.getRoot(req);
   }
 
   @Put()
